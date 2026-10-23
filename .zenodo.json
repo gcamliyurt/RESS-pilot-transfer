@@ -1,0 +1,8 @@
+{
+  "title": "Code for: decision-time pilot transfer point prediction and safety-constrained relocation (RESS JRESS-D-26-03347)",
+  "upload_type": "software",
+  "description": "Analysis code for the revised manuscript JRESS-D-26-03347 (Reliability Engineering & System Safety): transfer detection and pilotage-log validation, decision-time inputs at pilot-boat dispatch, model validation, and the safety-constrained meeting-point optimisation, including the multi-port extension. Licensed AIS and KMA data are not included.",
+  "creators": [{"name": "Camliyurt, Gokhan"}],
+  "license": "MIT",
+  "keywords": ["maritime pilotage", "AIS", "pilot transfer", "safety constraints", "machine learning"]
+}

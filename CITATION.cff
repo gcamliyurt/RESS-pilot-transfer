@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the article and this software."
+title: "Code for: decision-time pilot transfer point prediction and safety-constrained relocation"
+authors:
+  - family-names: Camliyurt
+    given-names: Gokhan
+license: MIT
