@@ -8,12 +8,14 @@ Code for the revised manuscript JRESS-D-26-03347 (Reliability Engineering & Syst
 1. Detects pilot-boat / ship transfer sessions in AIS for the 13 verified Busan pilot boats
    (`src/core/detect_interceptions.py`) and confirms them against the Busan Harbor Pilots'
    Association pilotage log (`scrape_busanpilot_log.py`, `build_r2_dataset.py`).
-2. Builds decision-time inputs at pilot-boat dispatch, using only observations at or before
-   that moment (`build_r2_dispatch_features.py`; every input timestamp is asserted <= dispatch).
+2. Builds decision-time inputs at a pilot-boat dispatch proxy identified retrospectively from AIS
+   (search bounded to 90 min before the transfer), using only observations at or before that moment
+   (`build_r2_dispatch_features.py`; every input timestamp is asserted <= dispatch).
+   `DISPATCH_WINDOW=prev` runs the sensitivity without the transfer-time bound.
 3. Validates the meeting-distance models with ship-grouped and temporal partitions and
    ship-clustered bootstrap intervals (`revision_r2_validation.py`, `FEATURE_SET=dispatch`).
-4. Relocates the out-of-fold predicted point under hard safety gates calibrated within the
-   training folds, with chart-based (water-only) routes and no use of future AIS
+4. Relocates the out-of-fold predicted point under hard safety gates calibrated per fold without
+   any transfer of that fold's held-out ships, with chart-based (water-only) routes and no use of future AIS
    (`calibrate_r2_gates.py --folds`, `src/core/optimize_meeting_point.py`, `run_r2_opt_causal.sh`).
 5. Repeats prediction at 11 US and Danish stations and the optimisation at 6 US stations on
    NOAA charts (`multiport/`).

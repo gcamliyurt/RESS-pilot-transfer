@@ -52,7 +52,7 @@ DISPATCH_NUM = ["ship_visible", "ref_dist_to_breakwater_m", "ref_bearing_from_br
                 "intercept_time_min", "traffic_0_5nm", "traffic_1nm", "traffic_2nm", "nearest_third_m",
                 "vessel_draft_m", "wind_speed_mps", "wave_height_m", "hour_kst", "month"]
 UKC_NUM = ["ukc_ref_m", "ukc2_boundary_m", "ukc4_boundary_m", "tide_dec_m"]
-if FEATURE_SET in ("dispatch", "dispatch_ukc"):
+if FEATURE_SET in ("dispatch", "dispatch_ukc", "dispatch_prevwin"):
     tm.NUM_FEATURES = DISPATCH_NUM + (UKC_NUM if FEATURE_SET == "dispatch_ukc" else [])
     tm.CATEGORICAL_FEATURES = ["vessel_ship_type_class"]
 elif FEATURE_SET in ("apriori", "adaptive", "adaptive_ukc", "causal"):
@@ -94,11 +94,12 @@ def load() -> pd.DataFrame:
         # Log-confirmed transfers from the rebuilt pipeline (build_r2_dataset.py);
         # all confirmed events are modelled, not only those the optimiser kept.
         df = pd.read_csv(R2_DATASET, low_memory=False)
-        if FEATURE_SET in ("apriori", "adaptive", "adaptive_ukc", "causal", "dispatch", "dispatch_ukc"):
+        if FEATURE_SET in ("apriori", "adaptive", "adaptive_ukc", "causal", "dispatch", "dispatch_ukc", "dispatch_prevwin"):
             ap = pd.read_csv(R2_DATASET.parent / {"apriori": "apriori_features_r2.csv",
                                                    "causal": "causal_features_r2.csv",
                                                    "dispatch": "dispatch_features_r2.csv",
-                                                   "dispatch_ukc": "dispatch_features_r2.csv"}.get(FEATURE_SET, "apriori_features_r2_adaptive.csv"))
+                                                   "dispatch_ukc": "dispatch_features_r2.csv",
+                                                   "dispatch_prevwin": "dispatch_features_r2_prevwin.csv"}.get(FEATURE_SET, "apriori_features_r2_adaptive.csv"))
             if FEATURE_SET == "adaptive_ukc":
                 ap = ap.merge(pd.read_csv(R2_DATASET.parent / "ukc_features_r2_adaptive.csv"), on="event_id")
             if FEATURE_SET == "dispatch_ukc":

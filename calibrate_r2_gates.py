@@ -77,9 +77,11 @@ def main() -> None:
     print(json.dumps(out["thresholds"], indent=2))
     if "--folds" in sys.argv:
         oof = pd.read_csv(sys.argv[sys.argv.index("--folds") + 1])
-        fold_of = oof.set_index("event_id").fold
-        R["fold"] = R.event_id.map(fold_of)
-        folds = {str(int(k)): _calibrate(R[R.fold != k])["thresholds"] for k in sorted(R.fold.dropna().unique())}
+        # Fold k is calibrated without any transfer of a ship held out in fold k, in either
+        # direction and including transfers without a dispatch (ship-independent gates).
+        ship = R.set_index("event_id").vessel_mmsi.astype(str)
+        held = oof.assign(ship=oof.event_id.map(ship)).groupby("fold").ship.agg(set)
+        folds = {str(int(k)): _calibrate(R[~R.vessel_mmsi.astype(str).isin(held[k])])["thresholds"] for k in sorted(held.index)}
         (R2 / "gate_thresholds_folds.json").write_text(json.dumps({"pass_rate": PASS_RATE, "folds": folds}, indent=2))
         print(json.dumps(folds, indent=1))
 

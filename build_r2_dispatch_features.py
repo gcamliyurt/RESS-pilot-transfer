@@ -36,6 +36,11 @@ MAX_AGE = pd.Timedelta(minutes=3)
 MAX_HEADING_OFF = 60.0
 import os as _os
 DISPATCH_RULE = _os.environ.get("DISPATCH_RULE", "v3")
+# DISPATCH_WINDOW=prev: the search starts at the end of the boat's previous session only (no bound
+# derived from the transfer time T); events whose previous session ended more than MAX_IDLE before
+# T are left out of this sensitivity sample, the trigger itself never uses T.
+DISPATCH_WINDOW = _os.environ.get("DISPATCH_WINDOW", "T90")
+MAX_IDLE = pd.Timedelta(hours=12)
 TRAFFIC_WIN = pd.Timedelta(minutes=3)
 NM = 1852.0
 KN = 0.514444
@@ -144,7 +149,7 @@ def main() -> None:
 
     rows, n_no_dispatch, n_no_ship = [], 0, 0
     for wk, ev in d.groupby("wk"):
-        t0, t1 = ev["T"].min() - LOOKBACK, ev["T"].max()
+        t0, t1 = ev["T"].min() - (MAX_IDLE if DISPATCH_WINDOW == "prev" else LOOKBACK), ev["T"].max()
         a = _load(sorted({wk, _week_file(t0)}), t0, t1)
         by = {m: g.sort_values("datetime") for m, g in a.groupby("mmsi")}
         third_all = a[~a.mmsi.isin(service)]
@@ -157,7 +162,13 @@ def main() -> None:
             t_end = min(own_start.get(e.event_id, e.T), e.T)
             prev = sess.get(str(e.pilot_mmsi))
             prev = prev[prev.end_time < t_end].end_time.max() if prev is not None else pd.NaT
-            t_start = max(e.T - LOOKBACK, prev) if pd.notna(prev) else e.T - LOOKBACK
+            if DISPATCH_WINDOW == "prev":
+                if pd.isna(prev) or prev < e.T - MAX_IDLE:
+                    n_no_dispatch += 1
+                    continue
+                t_start = prev
+            else:
+                t_start = max(e.T - LOOKBACK, prev) if pd.notna(prev) else e.T - LOOKBACK
             p = p[(p.datetime > t_start) & (p.datetime <= t_end)]
             pf = _dispatch(p, s) if len(p) else None
             if pf is None:
@@ -224,7 +235,7 @@ def main() -> None:
             })
         print(f"{Path(wk).name}: {len(rows)} so far", flush=True)
     out = pd.DataFrame(rows)
-    out.to_csv(R2 / "dispatch_features_r2.csv", index=False)
+    out.to_csv(R2 / ("dispatch_features_r2_prevwin.csv" if DISPATCH_WINDOW == "prev" else "dispatch_features_r2.csv"), index=False)
     dd = out.merge(d[["event_id", "traffic_direction"]], on="event_id")
     print(f"no dispatch found: {n_no_dispatch}; ship not yet visible at dispatch (kept, flagged): {n_no_ship}")
     print(dd.groupby("traffic_direction").ship_visible.agg(["size", "mean"]).round(3))

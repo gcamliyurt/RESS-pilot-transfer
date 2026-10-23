@@ -316,9 +316,13 @@ def calibrate(port: str) -> None:
     R = pd.DataFrame(rows)
     out = MP / OPT / port
     out.mkdir(parents=True, exist_ok=True)
-    if DISPATCH:  # one threshold set per fold, from transfers outside that fold
-        R["fold"] = R.event_id.map(fold_of)
-        folds = {str(int(k)): _thresholds(R[R.fold != k])[0] for k in sorted(R.fold.dropna().unique())}
+    R.to_csv(out / "calibration_metrics.csv", index=False)
+    if DISPATCH:  # one threshold set per fold, from transfers of ships outside that fold
+        # fold k excludes every transfer of a ship held out in fold k (either direction)
+        ship_of = lambda ids: ids.str.split("_").str[-2]
+        oof = fold_of.reset_index()
+        held = oof.assign(ship=ship_of(oof.event_id)).groupby("fold").ship.agg(set)
+        folds = {str(int(k)): _thresholds(R[~ship_of(R.event_id).isin(held[k])])[0] for k in sorted(held.index)}
         (out / "gate_thresholds_folds.json").write_text(json.dumps({"pass_rate": 0.95, "folds": folds}, indent=2))
     th, rep = _thresholds(R)
     ukc = pd.to_numeric(R.ukc_m, errors="coerce")
