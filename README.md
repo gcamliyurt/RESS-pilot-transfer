@@ -1,5 +1,7 @@
 # Decision-time pilot transfer point prediction and safety-constrained relocation
 
+[![DOI](https://zenodo.org/badge/1430928319.svg)](https://doi.org/10.5281/zenodo.23599536)
+
 Code for the revised manuscript JRESS-D-26-03347 (Reliability Engineering & System Safety).
 
 ## What it does
